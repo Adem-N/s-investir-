@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────────
+   Design tokens — repris de simulateurs.sinvestir.fr
+   (thème dark navy, police Lexend, bleu #1098f7, or #f8d047)
+   ─────────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans: var(--font-lexend), ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Marque */
+  --color-brand: #1098f7;
+  --color-brand-deep: #0049c6;
+  --color-brand-soft: #7899ce;
+  --color-gold: #f8d047;
+  --color-gold-soft: #ffea8f;
+  --color-gold-deep: #d6aa00;
+
+  /* Sémantique */
+  --color-gain: #11d05a;
+  --color-loss: #ff0500;
+
+  /* Surfaces (dark navy) */
+  --color-surface: #080c16;
+  --color-surface-soft: #0f172a;
+  --color-surface-elevated: #00173f;
+
+  /* Encre */
+  --color-ink: #ffffff;
+  --color-muted: #9ca3af;
+
+  --radius: 8px;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+  body {
+    min-height: 100dvh;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    background-color: #080c16;
+    background-image:
+      radial-gradient(1100px 560px at 50% -240px, rgba(16, 152, 247, 0.20), transparent 60%),
+      radial-gradient(820px 480px at 100% -60px, rgba(248, 208, 71, 0.08), transparent 55%),
+      radial-gradient(700px 520px at 0% 10%, rgba(0, 73, 198, 0.12), transparent 55%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Champs de formulaire cohérents avec le thème */
+  ::selection {
+    background: rgba(16, 152, 247, 0.35);
+  }
+}
+
+@layer components {
+  /* Carte "glassmorphism" façon Nuxt UI */
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  /* Bouton CTA or dégradé (signature S'investir) */
+  .btn-gold {
+    background-image: linear-gradient(180deg, #ffe27a 0%, #f8d047 45%, #e7c53d 100%);
+    color: #1a1400;
+    box-shadow: 0 8px 24px -8px rgba(248, 208, 71, 0.55);
+  }
+  .btn-gold:hover {
+    filter: brightness(1.05);
+  }
+}
+
+/* Embed : fond transparent pour épouser la page hôte */
+.embed-root {
+  background: transparent !important;
+}
