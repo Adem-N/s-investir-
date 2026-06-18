@@ -15,7 +15,6 @@ import { Disclaimer } from "./Disclaimer";
 import { SaveSimulation } from "./SaveSimulation";
 
 const ACCENTS = ["#1098f7", "#f8d047"];
-const YEAR = 365 * 86_400_000;
 
 interface HistoryEntry {
   status: "loading" | "ready" | "error";
@@ -25,9 +24,17 @@ interface HistoryEntry {
   error?: string;
 }
 
+// Dates initiales DÉTERMINISTES (constantes, pas Date.now()) pour éviter tout
+// mismatch d'hydratation ; elles sont recadrées sur la plage réelle de la
+// crypto dès que son historique est chargé (cf. ensureHistory).
 function defaultScenario(coinId: string): Scenario {
-  const now = Date.now();
-  return { coinId, amount: 100, frequency: "monthly", start: now - 5 * YEAR, end: now };
+  return {
+    coinId,
+    amount: 100,
+    frequency: "monthly",
+    start: Date.UTC(2021, 0, 1),
+    end: Date.UTC(2026, 0, 1),
+  };
 }
 
 export function CryptoSimulator({ embed = false }: { embed?: boolean }) {
@@ -74,16 +81,11 @@ export function CryptoSimulator({ embed = false }: { embed?: boolean }) {
         ...h,
         [id]: { status: "ready", points, range, source: data.source },
       }));
-      // Cadre les scénarios utilisant cette crypto sur la plage disponible.
+      // Au 1er chargement d'une crypto, on cadre le scénario sur toute la
+      // plage disponible (défaut = historique complet).
       setScenarios((scs) =>
         scs.map((s) =>
-          s.coinId === id
-            ? {
-                ...s,
-                start: Math.max(s.start, range.from) < range.to ? Math.max(s.start, range.from) : range.from,
-                end: Math.min(s.end, range.to),
-              }
-            : s
+          s.coinId === id ? { ...s, start: range.from, end: range.to } : s
         )
       );
     } catch (e) {
