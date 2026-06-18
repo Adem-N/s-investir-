@@ -27,6 +27,7 @@ export function SavedList() {
   const [email, setEmail] = useState<string | null>(null);
   const [loginEmail, setLoginEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [loginError, setLoginError] = useState(false);
 
   async function refresh() {
     setMode(await getStoreMode());
@@ -45,8 +46,13 @@ export function SavedList() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    await signInWithEmail(loginEmail);
-    setSent(true);
+    setLoginError(false);
+    try {
+      await signInWithEmail(loginEmail);
+      setSent(true);
+    } catch {
+      setLoginError(true);
+    }
   }
 
   return (
@@ -72,19 +78,24 @@ export function SavedList() {
             Se déconnecter
           </Button>
         ) : isSupabaseConfigured && !sent ? (
-          <form onSubmit={handleLogin} className="flex gap-2">
-            <input
-              type="email"
-              required
-              placeholder="email@exemple.fr"
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              className={cn(inputClass, "h-9 w-48")}
-            />
-            <Button variant="primary" size="sm" type="submit">
-              Lien magique
-            </Button>
-          </form>
+          <div className="flex flex-col items-end gap-1">
+            <form onSubmit={handleLogin} className="flex gap-2">
+              <input
+                type="email"
+                required
+                placeholder="email@exemple.fr"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className={cn(inputClass, "h-9 w-48")}
+              />
+              <Button variant="primary" size="sm" type="submit">
+                Lien magique
+              </Button>
+            </form>
+            {loginError ? (
+              <p className="text-xs text-loss">Échec de l&apos;envoi. Réessayez.</p>
+            ) : null}
+          </div>
         ) : isSupabaseConfigured && sent ? (
           <p className="text-xs text-gain">Lien envoyé ✓ vérifiez vos emails.</p>
         ) : null}

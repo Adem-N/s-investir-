@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { FREQUENCIES, type Frequency } from "@/lib/backtest";
 import type { Coin, Scenario } from "@/lib/types";
 import { formatDate, fromISODate, toISODate } from "@/lib/format";
@@ -28,6 +29,17 @@ export function ScenarioForm({
     FREQUENCIES.find((f) => f.value === scenario.frequency)?.amountLabel ?? "Montant";
   const minISO = range ? toISODate(range.from) : undefined;
   const maxISO = range ? toISODate(range.to) : undefined;
+  const uid = useId();
+
+  // Ignore les saisies vides / invalides (un champ date vidé renvoie "").
+  const setStart = (v: string) => {
+    const t = fromISODate(v);
+    if (Number.isFinite(t)) onChange({ start: t });
+  };
+  const setEnd = (v: string) => {
+    const t = fromISODate(v);
+    if (Number.isFinite(t)) onChange({ end: t });
+  };
 
   return (
     <div className="space-y-4">
@@ -62,6 +74,7 @@ export function ScenarioForm({
 
       <Field label="Fréquence d'investissement">
         <Segmented<Frequency>
+          ariaLabel="Fréquence d'investissement"
           options={FREQUENCIES.map((f) => ({ value: f.value, label: f.label }))}
           value={scenario.frequency}
           onChange={(frequency) => onChange({ frequency })}
@@ -69,6 +82,7 @@ export function ScenarioForm({
       </Field>
 
       <Field
+        htmlFor={`${uid}-amount`}
         label={amountLabel}
         hint={
           scenario.frequency === "once"
@@ -78,7 +92,9 @@ export function ScenarioForm({
       >
         <div className="relative">
           <input
+            id={`${uid}-amount`}
             type="number"
+            inputMode="numeric"
             min={1}
             step={10}
             value={Number.isFinite(scenario.amount) ? scenario.amount : ""}
@@ -92,23 +108,25 @@ export function ScenarioForm({
       </Field>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Date de début">
+        <Field htmlFor={`${uid}-start`} label="Date de début">
           <input
+            id={`${uid}-start`}
             type="date"
             value={toISODate(scenario.start)}
             min={minISO}
             max={toISODate(scenario.end)}
-            onChange={(e) => onChange({ start: fromISODate(e.target.value) })}
+            onChange={(e) => setStart(e.target.value)}
             className={`${inputClass} [color-scheme:dark]`}
           />
         </Field>
-        <Field label="Date de fin">
+        <Field htmlFor={`${uid}-end`} label="Date de fin">
           <input
+            id={`${uid}-end`}
             type="date"
             value={toISODate(scenario.end)}
             min={toISODate(scenario.start)}
             max={maxISO}
-            onChange={(e) => onChange({ end: fromISODate(e.target.value) })}
+            onChange={(e) => setEnd(e.target.value)}
             className={`${inputClass} [color-scheme:dark]`}
           />
         </Field>

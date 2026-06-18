@@ -107,12 +107,15 @@ export function CryptoSimulator({ embed = false }: { embed?: boolean }) {
         scs.map((s, i) => {
           if (i !== index) return s;
           const next = { ...s, ...patch };
-          // Changement de crypto : recadre sur la plage de la nouvelle crypto si connue.
+          // Changement de crypto : on cadre la fenêtre choisie dans la plage de
+          // la nouvelle crypto (si connue). Si elle ne l'est pas encore,
+          // ensureHistory la cadrera à son chargement.
           if (patch.coinId && patch.coinId !== s.coinId) {
             const range = histories[patch.coinId]?.range;
             if (range) {
-              next.start = range.from;
-              next.end = range.to;
+              const clamp = (v: number) => Math.min(Math.max(v, range.from), range.to);
+              next.start = clamp(s.start);
+              next.end = clamp(s.end);
             }
           }
           return next;

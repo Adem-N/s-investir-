@@ -67,6 +67,18 @@ describe("runBacktest — lump sum", () => {
     expect(r.avgBuyPrice).toBeCloseTo(100, 6);
   });
 
+  it("tolère des dates inversées (start > end)", () => {
+    const r = runBacktest({
+      amount: 1000,
+      frequency: "once",
+      prices,
+      start: d("2021-12-31"),
+      end: d("2021-01-01"),
+    });
+    expect(r.finalValue).toBeCloseTo(2000, 6);
+    expect(r.profit).toBeCloseTo(1000, 6);
+  });
+
   it("produit une moins-value quand le prix baisse", () => {
     const r = runBacktest({
       amount: 500,

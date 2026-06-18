@@ -103,7 +103,10 @@ export function scheduleDates(start: number, end: number, frequency: Frequency):
 
 /** Exécute le backtest et renvoie tous les indicateurs + la série temporelle. */
 export function runBacktest(params: BacktestParams): BacktestResult {
-  const { amount, frequency, start, end } = params;
+  const { amount, frequency } = params;
+  // Tolère un ordre de dates inversé (ex. saisie utilisateur).
+  const start = Math.min(params.start, params.end);
+  const end = Math.max(params.start, params.end);
   const prices = [...params.prices].sort((a, b) => a.t - b.t);
 
   const startPrice = priceAt(prices, start);

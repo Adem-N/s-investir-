@@ -66,15 +66,17 @@ export function formatDate(t: number): string {
 }
 
 export function formatMonth(t: number): string {
+  if (!Number.isFinite(t)) return "—";
   return monthFmt.format(new Date(t));
 }
 
-/** "yyyy-mm-dd" (UTC) — pour les <input type="date">. */
+/** "yyyy-mm-dd" (UTC) — pour les <input type="date">. "" si invalide. */
 export function toISODate(t: number): string {
+  if (!Number.isFinite(t)) return "";
   return new Date(t).toISOString().slice(0, 10);
 }
 
-/** "yyyy-mm-dd" (UTC, minuit) -> timestamp ms. */
+/** "yyyy-mm-dd" (UTC, minuit) -> timestamp ms (NaN si chaîne vide/invalide). */
 export function fromISODate(s: string): number {
   return Date.parse(s + "T00:00:00Z");
 }

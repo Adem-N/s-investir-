@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Coin } from "@/lib/types";
 import { cn } from "@/lib/cn";
 
@@ -39,8 +39,13 @@ export function CryptoPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [highlight, setHighlight] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
 
+  const baseId = useId();
+  const listId = `${baseId}-list`;
   const selected = coins.find((c) => c.id === value);
 
   const filtered = useMemo(() => {
@@ -54,6 +59,12 @@ export function CryptoPicker({
     return list.slice(0, 60);
   }, [coins, query]);
 
+  useEffect(() => setHighlight(0), [query, open]);
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: "nearest" });
+  }, [highlight]);
+
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
@@ -65,13 +76,40 @@ export function CryptoPicker({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
+  function commit(id: string) {
+    onChange(id);
+    setOpen(false);
+    setQuery("");
+    triggerRef.current?.focus();
+  }
+
+  function onSearchKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight((h) => Math.min(h + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => Math.max(h - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (filtered[highlight]) commit(filtered[highlight].id);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+      triggerRef.current?.focus();
+    }
+  }
+
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={listId}
+        aria-label="Choisir une cryptomonnaie"
         className="flex h-11 w-full items-center gap-2.5 rounded-xl border border-white/10 bg-black/30 px-3 text-left transition hover:border-white/20 focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/25"
       >
         <CoinLogo coin={selected} />
@@ -95,24 +133,31 @@ export function CryptoPicker({
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onSearchKeyDown}
+              role="combobox"
+              aria-expanded
+              aria-controls={listId}
+              aria-activedescendant={
+                filtered[highlight] ? `${baseId}-opt-${highlight}` : undefined
+              }
               placeholder="Rechercher (Bitcoin, ETH…)"
               className="h-9 w-full rounded-lg bg-black/40 px-3 text-sm text-white placeholder:text-muted/60 outline-none focus:ring-2 focus:ring-brand/25"
             />
           </div>
-          <ul role="listbox" className="max-h-72 overflow-y-auto p-1">
-            {filtered.map((c) => (
+          <ul id={listId} role="listbox" className="max-h-72 overflow-y-auto p-1">
+            {filtered.map((c, i) => (
               <li key={c.id}>
                 <button
+                  ref={i === highlight ? activeRef : undefined}
+                  id={`${baseId}-opt-${i}`}
                   type="button"
                   role="option"
                   aria-selected={c.id === value}
-                  onClick={() => {
-                    onChange(c.id);
-                    setOpen(false);
-                    setQuery("");
-                  }}
+                  onMouseEnter={() => setHighlight(i)}
+                  onClick={() => commit(c.id)}
                   className={cn(
                     "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition",
+                    i === highlight ? "bg-white/8" : "",
                     c.id === value ? "bg-brand/15" : "hover:bg-white/5"
                   )}
                 >
