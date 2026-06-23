@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Lexend } from "next/font/google";
 import "./globals.css";
+import { getSiteUrl } from "@/lib/site-url";
 
 const lexend = Lexend({
   subsets: ["latin"],
@@ -9,7 +10,8 @@ const lexend = Lexend({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://simulateur-crypto-sinvestir.vercel.app"),
+  // Résolue automatiquement (domaine de prod Vercel) → images OG absolues correctes.
+  metadataBase: new URL(getSiteUrl()),
   title: "Simulateur de plus-value crypto | S'investir",
   description:
     "Simulez la performance passée d'un investissement crypto (en une seule fois ou en DCA) sur des données historiques réelles. Outil gratuit et pédagogique.",
