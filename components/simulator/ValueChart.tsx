@@ -138,6 +138,18 @@ export function ValueChart({
               <stop offset="100%" stopColor={l.color} stopOpacity="0" />
             </linearGradient>
           ))}
+          {/* Masque de révélation : le rect grandit de gauche à droite (clé =
+             animKey → rejoué quand une nouvelle courbe apparaît). */}
+          <clipPath id={`${gradId}-reveal`}>
+            <rect
+              key={animKey}
+              className="chart-reveal-rect"
+              x={PAD.left}
+              y={0}
+              width={Math.max(0, innerW + PAD.right)}
+              height={height}
+            />
+          </clipPath>
         </defs>
 
         {/* grille horizontale + labels € */}
@@ -170,9 +182,9 @@ export function ValueChart({
           </text>
         ))}
 
-        {/* aires + courbes — le groupe rejoue son animation d'apparition à
-            chaque changement d'animKey (cf. `key`). */}
-        <g key={animKey} className="chart-enter">
+        {/* aires + courbes — révélées ensemble par le masque animé (balayage
+            gauche→droite). */}
+        <g clipPath={`url(#${gradId}-reveal)`}>
           {lines.map((l) => {
             if (l.points.length === 0) return null;
             const d = pathFor(l.points);
@@ -190,10 +202,6 @@ export function ValueChart({
                   fill="none"
                   stroke={l.color}
                   strokeWidth={2}
-                  // Courbes pleines : tracé progressif (pathLength normalisé à 1).
-                  // Les traits pointillés (capital investi) gardent leur motif.
-                  pathLength={l.dashed ? undefined : 1}
-                  className={l.dashed ? undefined : "chart-draw"}
                   strokeDasharray={l.dashed ? "5 5" : undefined}
                   strokeLinejoin="round"
                   strokeLinecap="round"

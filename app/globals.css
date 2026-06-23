@@ -76,30 +76,20 @@
 }
 
 /* ───────────────────────────────────────────────────────────────
-   Animation d'apparition du graphe (tracé progressif de la courbe
-   + montée en fondu de l'aire). Désactivée si l'utilisateur préfère
-   réduire les animations.
+   Apparition du graphe : balayage progressif gauche→droite de TOUT
+   le tracé (aire + courbe révélées ensemble), comme un graphe qui se
+   dessine dans le temps. Géré par un rectangle de clip animé (scaleX).
+   Désactivé si l'utilisateur préfère réduire les animations.
    ─────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
-  @keyframes chart-draw {
-    from { stroke-dashoffset: 1; }
-    to { stroke-dashoffset: 0; }
+  @keyframes chart-reveal {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
   }
-  @keyframes chart-enter {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  /* Groupe : fondu + légère montée de l'ensemble courbe/aire. */
-  .chart-enter {
-    animation: chart-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  .chart-reveal-rect {
     transform-box: fill-box;
-    transform-origin: bottom;
-  }
-  /* Courbe pleine : tracé de gauche à droite (path normalisé pathLength=1). */
-  .chart-draw {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-    animation: chart-draw 1s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards;
+    transform-origin: left center;
+    animation: chart-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 }
 
