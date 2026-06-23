@@ -1,8 +1,9 @@
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { CryptoSimulator } from "./CryptoSimulator";
+import type { DecodedScenario } from "@/lib/share";
 
-export function SimulatorScreen() {
+export function SimulatorScreen({ initial }: { initial?: DecodedScenario }) {
   return (
     <div className="flex min-h-dvh flex-col">
       <Header />
@@ -22,7 +23,7 @@ export function SimulatorScreen() {
           </p>
         </div>
 
-        <CryptoSimulator />
+        <CryptoSimulator initial={initial} />
       </main>
       <Footer />
     </div>

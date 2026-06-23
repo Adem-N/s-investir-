@@ -13,6 +13,8 @@ import { ScenarioCompare } from "./ScenarioCompare";
 import { ValueChart, type ChartLine } from "./ValueChart";
 import { Disclaimer } from "./Disclaimer";
 import { SaveSimulation } from "./SaveSimulation";
+import { ShareButton } from "./ShareButton";
+import { encodeScenario, type DecodedScenario } from "@/lib/share";
 
 const ACCENTS = ["#1098f7", "#f8d047"];
 
@@ -37,13 +39,39 @@ function defaultScenario(coinId: string): Scenario {
   };
 }
 
-export function CryptoSimulator({ embed = false }: { embed?: boolean }) {
+// Scénario initial = défauts, surchargés par un éventuel lien partagé.
+function makeInitialScenario(initial?: DecodedScenario): Scenario {
+  const base = defaultScenario(initial?.coinId ?? "bitcoin");
+  if (!initial) return base;
+  return {
+    coinId: initial.coinId ?? base.coinId,
+    amount: initial.amount ?? base.amount,
+    frequency: initial.frequency ?? base.frequency,
+    start: initial.start ?? base.start,
+    end: initial.end ?? base.end,
+  };
+}
+
+export function CryptoSimulator({
+  embed = false,
+  initial,
+}: {
+  embed?: boolean;
+  initial?: DecodedScenario;
+}) {
   const [coins, setCoins] = useState<Coin[]>([]);
   const [coinsReady, setCoinsReady] = useState(false);
   const [compare, setCompare] = useState(false);
-  const [scenarios, setScenarios] = useState<Scenario[]>([defaultScenario("bitcoin")]);
+  const [scenarios, setScenarios] = useState<Scenario[]>(() => [
+    makeInitialScenario(initial),
+  ]);
   const [histories, setHistories] = useState<Record<string, HistoryEntry>>({});
   const loadedRef = useRef<Set<string>>(new Set());
+  // Cryptos dont les dates proviennent d'un lien partagé → ne pas recadrer
+  // automatiquement sur l'historique complet (on borne juste à la plage).
+  const skipAutoFrameRef = useRef<Set<string>>(
+    new Set(initial?.coinId && initial.hasDates ? [initial.coinId] : [])
+  );
 
   const coinOf = useCallback(
     (id: string) => coins.find((c) => c.id === id),
@@ -82,11 +110,17 @@ export function CryptoSimulator({ embed = false }: { embed?: boolean }) {
         [id]: { status: "ready", points, range, source: data.source },
       }));
       // Au 1er chargement d'une crypto, on cadre le scénario sur toute la
-      // plage disponible (défaut = historique complet).
+      // plage disponible (défaut = historique complet) — SAUF si les dates
+      // viennent d'un lien partagé : on les borne alors à la plage dispo.
       setScenarios((scs) =>
-        scs.map((s) =>
-          s.coinId === id ? { ...s, start: range.from, end: range.to } : s
-        )
+        scs.map((s) => {
+          if (s.coinId !== id) return s;
+          if (skipAutoFrameRef.current.has(id)) {
+            const clamp = (v: number) => Math.min(Math.max(v, range.from), range.to);
+            return { ...s, start: clamp(s.start), end: clamp(s.end) };
+          }
+          return { ...s, start: range.from, end: range.to };
+        })
       );
     } catch (e) {
       loadedRef.current.delete(id);
@@ -100,6 +134,14 @@ export function CryptoSimulator({ embed = false }: { embed?: boolean }) {
   useEffect(() => {
     scenarios.forEach((s) => ensureHistory(s.coinId));
   }, [scenarios, ensureHistory]);
+
+  // Synchronise l'URL avec le scénario principal → lien toujours partageable
+  // (sans navigation, via history.replaceState). Inactif en mode embed.
+  useEffect(() => {
+    if (embed || typeof window === "undefined") return;
+    const qs = encodeScenario(scenarios[0]);
+    window.history.replaceState(null, "", `${window.location.pathname}?${qs}`);
+  }, [scenarios, embed]);
 
   const updateScenario = useCallback(
     (index: number, patch: Partial<Scenario>) => {
@@ -240,11 +282,14 @@ export function CryptoSimulator({ embed = false }: { embed?: boolean }) {
         </Card>
 
         {!embed && !compare && results[0] && (
-          <SaveSimulation
-            scenario={scenarios[0]}
-            coin={coinOf(scenarios[0].coinId)}
-            result={results[0]}
-          />
+          <>
+            <ShareButton query={encodeScenario(scenarios[0])} />
+            <SaveSimulation
+              scenario={scenarios[0]}
+              coin={coinOf(scenarios[0].coinId)}
+              result={results[0]}
+            />
+          </>
         )}
       </div>
 
