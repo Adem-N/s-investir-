@@ -34,7 +34,10 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const coinId = searchParams.get("coin") ?? "bitcoin";
-    const amount = Math.max(1, Number(searchParams.get("montant")) || 100);
+    const amount = Math.min(
+      100_000_000,
+      Math.max(1, Math.round(Number(searchParams.get("montant")) || 100))
+    );
     const frequency: Frequency = TOKEN_FREQ[searchParams.get("freq") ?? "mensuel"] ?? "monthly";
 
     const coin = FALLBACK_COINS.find((c) => c.id === coinId);
@@ -111,7 +114,7 @@ export async function GET(req: Request) {
           {/* Corps : résultat */}
           <div style={{ display: "flex", flexDirection: "column", width: "100%", gap: "12px" }}>
             <div style={{ display: "flex", fontSize: 30, color: BRAND.muted }}>
-              {coinName} · {amount} € {FREQ_DESC[frequency]}
+              {coinName} · {formatEur(amount)} {FREQ_DESC[frequency]}
               {periodLabel ? ` · ${periodLabel}` : ""}
             </div>
 

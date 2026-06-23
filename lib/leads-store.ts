@@ -34,7 +34,13 @@ export async function saveLead(input: LeadInput): Promise<void> {
 
   // Repli local : le lead est capté côté navigateur (mécanisme démontré).
   if (typeof window !== "undefined") {
-    const prev = JSON.parse(window.localStorage.getItem(LOCAL_KEY) ?? "[]");
+    let prev: unknown[] = [];
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(LOCAL_KEY) ?? "[]");
+      if (Array.isArray(parsed)) prev = parsed;
+    } catch {
+      prev = []; // stockage corrompu → on repart proprement
+    }
     prev.unshift({ ...payload, created_at: new Date().toISOString() });
     window.localStorage.setItem(LOCAL_KEY, JSON.stringify(prev));
   }

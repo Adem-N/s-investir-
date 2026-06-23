@@ -91,8 +91,17 @@ function buildIndex(annualRateAt: (t: number) => number): PricePoint[] {
   return pts;
 }
 
-const yearRate = (table: Record<number, number>) => (t: number) =>
-  table[new Date(t).getUTCFullYear()] ?? 0.05;
+// Taux annuel pour l'année de `t`, en bornant l'année aux bornes connues de la
+// table (extrapolation plate aux extrémités plutôt qu'une valeur inventée).
+const yearRate = (table: Record<number, number>) => {
+  const years = Object.keys(table).map(Number);
+  const minY = Math.min(...years);
+  const maxY = Math.max(...years);
+  return (t: number) => {
+    const y = new Date(t).getUTCFullYear();
+    return table[Math.min(Math.max(y, minY), maxY)];
+  };
+};
 
 const MSCI_WORLD = buildIndex(yearRate(MSCI_WORLD_ANNUAL_EUR));
 const LIVRET_A = buildIndex(livretRateAt);
@@ -120,12 +129,18 @@ function net(profit: number, taxed: boolean): number {
 /** Compare le résultat crypto aux supports classiques sur le MÊME plan. */
 export function computeBenchmarks(
   params: { amount: number; frequency: Frequency; start: number; end: number },
-  crypto: { label: string; finalValue: number; profit: number }
+  crypto: { label: string; finalValue: number; profit: number; totalInvested: number }
 ): { totalInvested: number; rows: BenchmarkRow[] } {
   const msci = runBacktest({ ...params, prices: MSCI_WORLD });
   const livret = runBacktest({ ...params, prices: LIVRET_A });
   const cpi = runBacktest({ ...params, prices: CPI_FR });
-  const totalInvested = msci.totalInvested; // identique pour tous (même calendrier)
+  // Base d'investissement de RÉFÉRENCE = celle du crypto (même calendrier de
+  // versements). On recalcule chaque plus-value benchmark sur cette base
+  // commune pour garantir une comparaison cohérente, quoi qu'il arrive.
+  const totalInvested = crypto.totalInvested;
+  const msciProfit = msci.finalValue - totalInvested;
+  const livretProfit = livret.finalValue - totalInvested;
+  const inflationCost = cpi.finalValue - totalInvested;
 
   const rows: BenchmarkRow[] = [
     {
@@ -144,8 +159,8 @@ export function computeBenchmarks(
       sublabel: "ETF actions monde",
       kind: "etf",
       finalValue: msci.finalValue,
-      profit: msci.profit,
-      netProfit: net(msci.profit, true),
+      profit: msciProfit,
+      netProfit: net(msciProfit, true),
       taxed: true,
     },
     {
@@ -154,8 +169,8 @@ export function computeBenchmarks(
       sublabel: "épargne garantie",
       kind: "savings",
       finalValue: livret.finalValue,
-      profit: livret.profit,
-      netProfit: livret.profit,
+      profit: livretProfit,
+      netProfit: livretProfit,
       taxed: false,
     },
     {
@@ -164,8 +179,8 @@ export function computeBenchmarks(
       sublabel: "seuil pouvoir d'achat",
       kind: "inflation",
       finalValue: cpi.finalValue,
-      profit: cpi.finalValue - totalInvested,
-      netProfit: cpi.finalValue - totalInvested,
+      profit: inflationCost,
+      netProfit: inflationCost,
       taxed: false,
     },
   ];

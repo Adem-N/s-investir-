@@ -43,6 +43,7 @@ export function BenchmarkCompare({
           label: coin?.name ?? scenario.coinId,
           finalValue: result.finalValue,
           profit: result.profit,
+          totalInvested: result.totalInvested,
         }
       ),
     [scenario, coin, result]

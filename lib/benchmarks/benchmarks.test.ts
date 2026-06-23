@@ -11,7 +11,8 @@ describe("computeBenchmarks", () => {
   const { totalInvested, rows } = computeBenchmarks(params, {
     label: "Bitcoin",
     finalValue: 20_000,
-    profit: 15_000,
+    totalInvested: 4_900, // 49 versements mensuels de 100 € (jan 2020 → jan 2024)
+    profit: 15_100, // 20 000 - 4 900
   });
 
   it("le même capital est investi pour tous les supports (même calendrier)", () => {
