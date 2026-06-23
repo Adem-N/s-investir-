@@ -15,9 +15,12 @@ Un simulateur qui calcule, sur **données historiques réelles**, ce qu'aurait r
 - **Indicateurs** : montant investi, valeur finale, plus/moins-value (€ et %), performance annualisée, quantité accumulée, prix de revient moyen.
 - **Graphe** custom (SVG, zéro dépendance) : valeur du portefeuille vs capital investi, avec survol interactif.
 - **Comparaison de scénarios** : deux stratégies côte à côte (ex. BTC vs ETH, ou lump-sum vs DCA).
+- **Comparaison vs placement classique** : le même plan en **MSCI World** (ETF), **Livret A** et face à l'**inflation**, **net de flat tax 30 %** — message pédagogique on-brand.
+- **Résultat partageable + image OG dynamique** : chaque simulation a une **URL dédiée** et une **carte Open Graph générée à la volée** (`next/og`) → partage viral sur les réseaux.
+- **Capture de leads** : email au pic d'émotion → Supabase (repli `localStorage`), prêt à brancher au CRM / tunnel formation.
 - **Mode embed** : route `/embed/crypto` sans habillage, prête à intégrer en `<iframe>` (auto-resize).
 - **Simulations sauvegardées** : via Supabase (auth + RLS) ou repli `localStorage` — la démo marche sans backend.
-- **Responsive** desktop / mobile, **fidèle au design** S'investir (dark navy, Lexend, bleu `#1098f7`, or `#f8d047`).
+- **Responsive** desktop / mobile, **fidèle au design** S'investir (dark navy, Lexend, bleu `#1098f7`, or `#f8d047`, **logo + favicon officiels**).
 
 ---
 
@@ -76,26 +79,33 @@ app/
   mes-simulations/page.tsx          # simulations sauvegardées
   api/coins/route.ts                # catalogue : CoinGecko live + repli bundle
   api/history/route.ts              # historique : bundle (long terme) | CoinGecko live
+  api/og/route.tsx                  # image Open Graph dynamique par simulation
 components/
-  simulator/   CryptoSimulator · CryptoPicker · ScenarioForm · ValueChart · ResultSummary · ScenarioCompare · SaveSimulation · SavedList
+  simulator/   CryptoSimulator · CryptoPicker · ScenarioForm · ValueChart · ResultSummary · ScenarioCompare
+               BenchmarkCompare · ShareButton · LeadCapture · SaveSimulation · SavedList
   ui/          Card · Button · Stat · Segmented · Field · Spinner
   site/        Header · Footer · Logo
 lib/
   backtest.ts                       # cœur métier PUR (lump-sum + DCA) — testé
-  backtest.test.ts                  # 12 tests Vitest
+  backtest.test.ts                  # 13 tests Vitest
+  benchmarks/                       # MSCI World / Livret A / inflation + 5 tests (cf. SOURCES.md)
+  share.ts                          # encode/décode le scénario dans l'URL
   coingecko.ts                      # client CoinGecko (serveur)
   fallback/                         # dataset historique embarqué (réel)
   simulations-store.ts              # Supabase | localStorage (transparent)
+  leads-store.ts                    # capture email → Supabase | localStorage
   format.ts · cn.ts · types.ts
 scripts/fetch-fallback.mjs          # (re)génère le dataset embarqué
-supabase/schema.sql                 # table + RLS pour la sauvegarde
+supabase/schema.sql                 # tables (simulations, leads) + RLS
 ```
 
 ### Logique de backtest (`lib/backtest.ts`)
 
 - **Lump-sum** : `unités = montant / prix(début)` ; `valeur = unités · prix(fin)`.
 - **DCA** : à chaque versement `unités_i = montant / prix(dateᵢ)` ; on cumule unités & capital, `valeur = Σunités · prix(fin)`.
-- Sortie : tous les indicateurs + la **série temporelle** pour le graphe. Couvert par **12 tests unitaires**.
+- Sortie : tous les indicateurs + la **série temporelle** pour le graphe. Couvert par **13 tests unitaires** (+ 5 sur les benchmarks).
+
+> Le même moteur `runBacktest` sert aux **benchmarks** : chaque support classique (MSCI World, Livret A, inflation) est modélisé par un **indice de prix synthétique** capitalisant au rythme réel, puis backtesté à l'identique → comparaison _apples-to-apples_ sur le même plan.
 
 ### Données : `live + fallback`
 
@@ -143,13 +153,20 @@ Créez la table + RLS avec `supabase/schema.sql`, puis renseignez `NEXT_PUBLIC_S
 
 ## 💡 Suggestions d'amélioration (regard de partenaire)
 
-Après avoir exploré vos outils :
+Après avoir exploré vos outils, j'ai non seulement listé des pistes mais **déjà implémenté les plus rentables** dans cette démo.
 
-1. **Unifier la stack & l'embarquabilité.** La suite est en Nuxt, la stack annoncée en Next. Je proposerais un **package de design-tokens partagé** + des **widgets embarquables** (iframe / web components) framework-agnostiques, réutilisables aussi bien dans la suite que sur le WordPress `sinvestir.fr`.
-2. **SEO.** Les pages simulateurs sont rendues côté client (shell ~4 Ko) → **SSR/ISR** apporterait un gain SEO majeur sur des mots-clés finance à forte intention (« simulateur intérêts composés », « plus-value crypto »…).
-3. **Croissance.** **URLs de résultat partageables** (paramètres encodés) + **OG images dynamiques** par simulation = levier viral et social.
-4. **Lead-gen / CRM.** Brancher les résultats sur **HubSpot** (« recevez votre simulation par email ») et automatiser via **n8n** ; mettre en cache les séries historiques (Supabase/edge) pour réduire les appels API.
-5. **Crypto+.** Benchmark vs ETF/livret, **fiscalité** (flat tax 30 %), valeurs ajustées de l'inflation, et option **bougies OHLC**.
+### ✅ Déjà livré dans cette démo
+
+- **Croissance virale.** URLs de résultat partageables (paramètres encodés) + **image OG dynamique** par simulation → fort taux de clic au partage.
+- **Lead-gen.** Capture email au pic d'émotion → table `leads` (RLS, insertion anonyme, lecture back-office) → prêt à brancher au tunnel formation. _En prod : ajouter l'email transactionnel (Resend/Brevo) + la synchro CRM (HubSpot)._
+- **Pédagogie « investir intelligemment ».** Comparaison crypto vs **MSCI World / Livret A / inflation**, **nette de flat tax 30 %** — colle à votre discours long terme.
+
+### 🔜 Pistes supplémentaires
+
+1. **Unifier la stack & l'embarquabilité.** Suite en Nuxt, stack annoncée en Next → **package de design-tokens partagé** + **widgets embarquables** (iframe / web components) framework-agnostiques, réutilisables jusque sur le WordPress `sinvestir.fr`.
+2. **SEO.** Pousser le **SSR/ISR** sur toutes les pages simulateurs (gain sur des mots-clés finance à forte intention) ; le simulateur crypto est déjà rendu serveur ici.
+3. **Automatisation & coûts.** Orchestration **n8n** (lead → CRM → séquence email) ; cache des séries historiques (Supabase/edge) pour réduire les appels CoinGecko.
+4. **Crypto+.** Valeurs ajustées de l'inflation dans le graphe, **bougies OHLC**, et plans d'investissement programmés.
 
 ---
 
