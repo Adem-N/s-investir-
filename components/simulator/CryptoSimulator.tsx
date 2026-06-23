@@ -14,6 +14,7 @@ import { ValueChart, type ChartLine } from "./ValueChart";
 import { Disclaimer } from "./Disclaimer";
 import { SaveSimulation } from "./SaveSimulation";
 import { ShareButton } from "./ShareButton";
+import { LeadCapture } from "./LeadCapture";
 import { encodeScenario, type DecodedScenario } from "@/lib/share";
 
 const ACCENTS = ["#1098f7", "#f8d047"];
@@ -354,6 +355,14 @@ export function CryptoSimulator({
                   coin: coinOf(s.coinId),
                   result: results[i],
                 }))}
+              />
+            )}
+
+            {!embed && !compare && results[0] && (
+              <LeadCapture
+                scenario={scenarios[0]}
+                coin={coinOf(scenarios[0].coinId)}
+                result={results[0]}
               />
             )}
 
