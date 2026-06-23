@@ -13,6 +13,14 @@ export const metadata: Metadata = {
   title: "Simulateur de plus-value crypto | S'investir",
   description:
     "Simulez la performance passée d'un investissement crypto (en une seule fois ou en DCA) sur des données historiques réelles. Outil gratuit et pédagogique.",
+  // Favicon = mark officiel S'investir. On le déclare via `icons` (assets
+  // statiques de /public) plutôt que par la convention app/icon.svg, car un
+  // chemin de projet contenant une apostrophe casse le metadata-route-loader.
+  icons: {
+    icon: "/brand/sinvestir-mark-gold.svg",
+    shortcut: "/brand/sinvestir-mark-gold.svg",
+    apple: "/brand/sinvestir-mark-gold.svg",
+  },
   openGraph: {
     title: "Simulateur de plus-value crypto | S'investir",
     description:

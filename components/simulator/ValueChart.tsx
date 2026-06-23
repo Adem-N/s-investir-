@@ -104,6 +104,11 @@ export function ValueChart({
   const yTicks = Array.from({ length: 4 }, (_, i) => (yMax / 4) * (i + 1));
   const xTicks = Array.from({ length: 4 }, (_, i) => xMin + ((xMax - xMin) / 3) * i);
 
+  // Signature qui change quand une "nouvelle courbe" apparaît (crypto, fenêtre
+  // de dates, ou bascule comparaison) → rejoue l'animation de tracé. Un simple
+  // changement de montant ne la modifie pas (même label + même nb de points).
+  const animKey = lines.map((l) => `${l.label}#${l.points.length}`).join("|");
+
   const hover = hoverT == null ? null : hoverT;
   const hoverPoints =
     hover == null
@@ -165,32 +170,39 @@ export function ValueChart({
           </text>
         ))}
 
-        {/* aires + courbes */}
-        {lines.map((l) => {
-          if (l.points.length === 0) return null;
-          const d = pathFor(l.points);
-          const area =
-            l.fill && l.points.length > 1
-              ? `${d} L ${sx(l.points[l.points.length - 1].t).toFixed(1)} ${sy(0).toFixed(
-                  1
-                )} L ${sx(l.points[0].t).toFixed(1)} ${sy(0).toFixed(1)} Z`
-              : null;
-          return (
-            <g key={l.key}>
-              {area ? <path d={area} fill={`url(#${gradId}-${l.key})`} /> : null}
-              <path
-                d={d}
-                fill="none"
-                stroke={l.color}
-                strokeWidth={2}
-                strokeDasharray={l.dashed ? "5 5" : undefined}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                opacity={l.dashed ? 0.7 : 1}
-              />
-            </g>
-          );
-        })}
+        {/* aires + courbes — le groupe rejoue son animation d'apparition à
+            chaque changement d'animKey (cf. `key`). */}
+        <g key={animKey} className="chart-enter">
+          {lines.map((l) => {
+            if (l.points.length === 0) return null;
+            const d = pathFor(l.points);
+            const area =
+              l.fill && l.points.length > 1
+                ? `${d} L ${sx(l.points[l.points.length - 1].t).toFixed(1)} ${sy(0).toFixed(
+                    1
+                  )} L ${sx(l.points[0].t).toFixed(1)} ${sy(0).toFixed(1)} Z`
+                : null;
+            return (
+              <g key={l.key}>
+                {area ? <path d={area} fill={`url(#${gradId}-${l.key})`} /> : null}
+                <path
+                  d={d}
+                  fill="none"
+                  stroke={l.color}
+                  strokeWidth={2}
+                  // Courbes pleines : tracé progressif (pathLength normalisé à 1).
+                  // Les traits pointillés (capital investi) gardent leur motif.
+                  pathLength={l.dashed ? undefined : 1}
+                  className={l.dashed ? undefined : "chart-draw"}
+                  strokeDasharray={l.dashed ? "5 5" : undefined}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  opacity={l.dashed ? 0.7 : 1}
+                />
+              </g>
+            );
+          })}
+        </g>
 
         {/* curseur de survol */}
         {hover != null && (
