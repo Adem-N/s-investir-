@@ -15,6 +15,7 @@ import { Disclaimer } from "./Disclaimer";
 import { SaveSimulation } from "./SaveSimulation";
 import { ShareButton } from "./ShareButton";
 import { LeadCapture } from "./LeadCapture";
+import { BenchmarkCompare } from "./BenchmarkCompare";
 import { encodeScenario, type DecodedScenario } from "@/lib/share";
 
 const ACCENTS = ["#1098f7", "#f8d047"];
@@ -355,6 +356,14 @@ export function CryptoSimulator({
                   coin: coinOf(s.coinId),
                   result: results[i],
                 }))}
+              />
+            )}
+
+            {!compare && results[0] && (
+              <BenchmarkCompare
+                scenario={scenarios[0]}
+                coin={coinOf(scenarios[0].coinId)}
+                result={results[0]}
               />
             )}
 
